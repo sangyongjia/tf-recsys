@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "/Users/sangyongjia/Documents/MachineLearning/github/MovieRecommendation/LFM/FM-FFM"
+		},
+		{
+			"path": "/Users/sangyongjia/Documents/MachineLearning/github/MovieRecommendation/LFM/funk-svd"
+		},
+		{
+			"path": "/Users/sangyongjia/Documents/MachineLearning/github/MovieRecommendation/LFM/LightGBM-GBDT-LR"
+		},
+		{
+			"path": "/Users/sangyongjia/Documents/MachineLearning/github/MovieRecommendation/LFM/Paper-Implementation-Matrix-Factorization-Recommender-Systems-Netflix"
+		},
+		{
+			"path": "/Users/sangyongjia/Documents/MachineLearning/github/MovieRecommendation/LFM/tensorflow-DeepFM"
+		},
+		{
+			"path": "/Users/sangyongjia/Documents/MachineLearning/github/MovieRecommendation/LFM/tf-svd++"
+		}
+	]
+}
