@@ -12,5 +12,5 @@ def activation_layer(activation):
     elif issubclass(activation, Layer):
         act_layer = activation()
     else:
-        raise ValueError("Invalid activation,found %s.You should use a str or a Activation Layer Class." % (activation)))
+        raise ValueError("Invalid activation,found %s.You should use a str or a Activation Layer Class." % (activation))
     return act_layer

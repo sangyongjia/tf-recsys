@@ -1,8 +1,8 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Layer 
 from tensorflow.keras.regularizers import l2
-from tensorflow.keras.initializer import glorot_normal
-from tensorflow.keras.initializer import Zeros
+from tensorflow.keras.initializers import glorot_normal
+from tensorflow.keras.initializers import Zeros
 from .activation import activation_layer
 
 class DNN(Layer):
@@ -28,7 +28,7 @@ class DNN(Layer):
                                     shape=(self.hidden_units[i],),
                                     initializer=Zeros(),
                                     trainable=True) for i in range(len(self.hidden_units))]
-        if.self.use_bn:
+        if self.use_bn:
             self.bn_layers = [tf.keras.layers.BatchNormalization() for _ in range(len(self.hidden_units))]  #输入的位也要bn?
         self.dropout_layers = [tf.keras.layers.Dropout(self.dropout_rate, seed=self.seed+i) for i in range(len(self.hidden_units))]
         self.activation_layers = [activation_layer(self.activation) for _ in range(len(self.hidden_units))]
@@ -43,7 +43,7 @@ class DNN(Layer):
             fc = self.activation_layers[i](fc)
             fc = self.dropout_layers[i](fc, training=training)
             deep_input = fc
-    
+        return deep_input 
     def compute_output_shape(self, input_shape):  #不懂啥意思，啥时候用？
         if len(self.hidden_units) > 0:
             shape = input_shape[:-1] + (self.hidden_units[-1],)
@@ -75,7 +75,7 @@ class PredictionLayer(Layer):
     def call(self, inputs, **kwargs):
         x = inputs
         if self.use_bias:
-            x = tf.nn.bias_add(x, self.global_bias, data_forma="NHWC")
+            x = tf.nn.bias_add(x, self.global_bias, data_format="NHWC")
         if self.task == "binary":
             x = tf.sigmoid(x)
         output = tf.reshape(x, (-1,1))

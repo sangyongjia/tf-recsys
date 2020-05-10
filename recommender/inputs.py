@@ -7,12 +7,13 @@ from itertools import chain
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Embedding 
 from tensorflow.keras.layers import Flatten
-from tensorflow.keras.initializer import RandomNormal
+from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.regularizers import l2
 
 from .layers.utils import concat_func
 from .layers.utils import Linear
 from .layers.utils import add_func
+from .layers.utils import Hash
 
 DEFAULT_GROUP_NAME = "default_group"
 
@@ -33,8 +34,8 @@ class SparseFeat(namedtuple('SparseFeat',['name','vocabulary_size','embedding_di
 
     def __hash__(self):#放过自己
         return self.name.__hash__()
-class VarLenSparseFeat(namedtuple('VarLenSparseFeat':['sparsefeat', 'maxlen', 'combiner', 'length_name', 'weight_name', 'weight_norm'])):
-    __slots__()
+class VarLenSparseFeat(namedtuple('VarLenSparseFeat',['sparsefeat', 'maxlen', 'combiner', 'length_name', 'weight_name', 'weight_norm'])):
+    __slots__=()
 
     def __new__(cls, sparsefeat, maxlen, combiner="mean", length_name=None, weight_name=None, weight_norm=True):
          return super(VarLenSparseFeat,cls).__new__(cls, sparsefeat, maxlen, combiner, length_name, weight_name,weight_norm)
@@ -49,7 +50,7 @@ class VarLenSparseFeat(namedtuple('VarLenSparseFeat':['sparsefeat', 'maxlen', 'c
         return self.name.__hash__()
 
 class DenseFeat(namedtuple('DenseFeat',['name', 'dimension', 'dtype'])):
-    __slots__()
+    __slots__=()
 
     def __new__(cls, name, dimension=1, dtype="float32"):
         return super(DenseFeat, cls).__new__(cls, name, dimension, dtype)
@@ -61,8 +62,9 @@ def build_input_features(feature_columns, prefix=''):
     for fc in feature_columns:
         if isinstance(fc, SparseFeat):
             input_features[fc.name] = Input(shape=(1,), name=prefix+fc.name, dtype=fc.dtype)
+            #input_features[fc.name] = Input(shape=(1,), name=prefix+fc.name, dtype=fc.dtype)
         elif isinstance(fc, DenseFeat):
-            input_features[fc.name] = Input(shape=(1,), name=prefix+fc.name, dtype=fc.dtype)
+            input_features[fc.name] = Input(shape=(fc.dimension,), name=prefix+fc.name, dtype=fc.dtype)
         elif isinstance(fc, VarLenSparseFeat):
             input_features[fc.name] = Input(shape=(fc.maxlen,), name=prefix+fc.name, dtype=fc.dtype)
             if fc.weight_name is not None:
@@ -79,7 +81,7 @@ def get_feature_names(feature_columns):
 
 def create_embedding_dict(sparse_feature_columns, varlen_sparse_feature_columns, init_std, seed, l2_reg, prefix="sparse_", seq_mask_zero=True): #prefix没用了
     sparse_embedding = {feat.embedding_name: Embedding(feat.vocabulary_size, feat.embedding_dim,
-                                                        embedding_initializer=RandomNormal(mean=0.0, stddev=init_std, seed=seed),
+                                                        embeddings_initializer=RandomNormal(mean=0.0, stddev=init_std, seed=seed),
                                                         embeddings_regularizer=l2(l2_reg)
                                                         ) for feat in sparse_feature_columns}
     if varlen_sparse_feature_columns and len(varlen_sparse_feature_columns) > 0:
@@ -101,10 +103,12 @@ def embedding_lookup(sparse_embedding_dict, sparse_input_dict, sparse_feature_co
     for fc in sparse_feature_columns:
         feature_name = fc.name
         embedding_name = fc.embedding_name
-        if(len(return_feat_list)==0 or feature_name in return_feat_list)
+        if(len(return_feat_list)==0 or feature_name in return_feat_list):
             if fc.use_hash:
                 #没涉及到hash
-                pass
+                lookup_idx = Hash(fc.vocabulary_size, mask_zero=(feature_name in mask_feat_list))(
+                    sparse_input_dict[feature_name])
+         
             else:
                 lookup_idx = sparse_input_dict[feature_name] ##这儿的lookup_idx就是Input
 
@@ -199,7 +203,7 @@ def get_linear_logit(features, feature_columns, units=1, use_bias=False, init_st
     linear_emb_list = [input_from_feature_columns(features, linear_feature_columns, l2_reg, 
                                                     init_std, seed, prefix=prefix+str(i))[0] 
                                                     for i in range(units)]
-    , dense_input_list = input_from_feature_columns(features, linear_feature_columns, l2_reg, init_std, seed, prefix=prefix)
+    _ ,dense_input_list = input_from_feature_columns(features, linear_feature_columns, l2_reg, init_std, seed, prefix=prefix)
 
     linear_logit_list = []
     for i in range(units):

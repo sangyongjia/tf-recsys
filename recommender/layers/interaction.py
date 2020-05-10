@@ -2,15 +2,16 @@ import itertools
 
 from tensorflow.keras.layers import Layer 
 from tensorflow.keras import backend as K 
-from tensorflow.keras.initializer import Zeros
-from tensorflow.keras.initializer import glorot_normal
-from tensorflow.keras.initializer import glorot_uniform
-from tensorflow.keras.regularizer import l2
+from tensorflow.keras.initializers import Zeros
+from tensorflow.keras.initializers import glorot_normal
+from tensorflow.keras.initializers import glorot_uniform
+from tensorflow.keras.regularizers import l2
 
 from .utils import reduce_sum
 from .utils import softmax
 
-
+class BiInteractionPooling(Layer):
+    pass
 class FM(Layer):
     """Factorization Machine models pairwise (order-2) feature interactions
      without linear term and bias.
@@ -94,7 +95,7 @@ class InnerProductLayer(Layer):
         num_inputs = len(embed_list)
 
         for i in range(num_inputs - 1):
-            for j in range(i+1, num_inputs)
+            for j in range(i+1, num_inputs):
                 row.append(i)
                 col.append(j)
         p = tf.concat([embed_list[idx] for idx in row], axis=1)
@@ -106,7 +107,7 @@ class InnerProductLayer(Layer):
         
         return inner_product
 
-    def compute_output_shape(self, input_shape)
+    def compute_output_shape(self, input_shape):
         num_inputs = len(input_shape)
         num_pairs = int(num_inputs * (num_inputs - 1)/2)
         input_shape = input_shape[0]
@@ -117,13 +118,13 @@ class InnerProductLayer(Layer):
         else:
             return(input_shape[0], num_pairs, embed_size)
         
-    def get_config(self,)：
+    def get_config(self,):
         config = {"reduce_sum": self.reduce_sum}
         base_config = super(InnerProductLayer, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
-
-    class OutterProductLayer(Layer):
-    """OutterProduct Layer used in PNN.This implemention is
+class OutterProductLayer(Layer):
+    """
+    OutterProduct Layer used in PNN.This implemention is
     adapted from code that the author of the paper published on https://github.com/Atomu2014/product-nets.
 
       Input shape
@@ -142,7 +143,7 @@ class InnerProductLayer(Layer):
     """
 
     def __init__(self, kernel_type="mat", seed=2020, **kwargs):
-        if kernel_type not in ["mat", "vec", "num"]
+        if kernel_type not in ["mat", "vec", "num"]:
             raise ValueError("kernel_type must be mat,vec or num")
         self.kernel_type = kernel_type
         self.seed = seed 
@@ -194,8 +195,8 @@ class InnerProductLayer(Layer):
         row = []
         col = []
         num_inputs = len(embed_list)
-        for i in range(num_inputs-1)
-            for j in range(i+1, num_inputs)
+        for i in range(num_inputs-1):
+            for j in range(i+1, num_inputs):
                 row.append(i)
                 row.append(j)
         p = tf.concat([embed_list[idx] for idx in row], axis=1)
@@ -226,7 +227,7 @@ class InnerProductLayer(Layer):
 
 
 class CrossNet(Layer):
-        """The Cross Network part of Deep&Cross Network model,
+    """The Cross Network part of Deep&Cross Network model,
     which leans both low and high degree cross feature.
 
       Input shape
@@ -245,7 +246,7 @@ class CrossNet(Layer):
       References
         - [Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12.](https://arxiv.org/abs/1708.05123)
     """
-    def __init__(self, layer_num=2, l2_reg=0, seed=2020, **kwargs)
+    def __init__(self, layer_num=2, l2_reg=0, seed=2020, **kwargs):
         self.layer_num = layer_num
         self.l2_reg = l2_reg
         self.seed = seed
@@ -260,7 +261,7 @@ class CrossNet(Layer):
                                         initializer=glorot_normal(seed=self.seed), 
                                         regularizer=l2(self.l2_reg), 
                                         trainable=True) for i in range(self.layer_num)]
-        self.bias = [self.add_weight(name="bias" + str(i), shape=(dim, 1)
+        self.bias = [self.add_weight(name="bias" + str(i), shape=(dim, 1),
                                     initializer=Zeros(),
                                     trainable=True) for i in range(self.layer_num)]
         super(CrossNet, self).build(input_shape)

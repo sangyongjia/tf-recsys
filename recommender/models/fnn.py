@@ -11,7 +11,7 @@ from ..layers.core import DNN
 
 def FNN(linear_feature_columns, dnn_features_columns, dnn_hidden_units=(128,128),
         l2_reg_embedding=1e-5, l2_reg_linear=1e-5, l2_reg_dnn=0, init_std=0.001,
-        seed=2020, dnn_dropout=0，dnn_activation="relu", task="binary"):
+        seed=2020, dnn_dropout=0, dnn_activation="relu", task="binary"):
 
     features = build_input_features(linear_feature_columns, dnn_features_columns)
     inputs_list = list(features.values())

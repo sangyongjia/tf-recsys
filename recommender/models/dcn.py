@@ -22,7 +22,7 @@ def DCN(linear_feature_columns, dnn_feature_columns, cross_num=2, dnn_hidden_uni
     linear_logit = get_linear_logit(features, linear_feature_columns, init_std=init_std, seed=seed, prefix="linear", l2_reg=l2_reg_linear)
     
     dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
-    if len(dnn_hidden_units)> and cross_num > 0:
+    if len(dnn_hidden_units)>0  and cross_num > 0:
         deep_out = DNN(dnn_hidden_units, dnn_activation, l2_reg_dnn, dnn_dropout, dnn_use_bn, seed)(dnn_input)
         cross_out = CrossNet(cross_num, l2_reg=l2_reg_cross,)(dnn_input)
         stack_out = tf.keras.layers.Concatenate()([cross_out, deep_out])

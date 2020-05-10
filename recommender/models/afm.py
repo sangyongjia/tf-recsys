@@ -21,8 +21,7 @@ def AFM(linear_feature_columns, dnn_feature_columns, fm_group=DEFAULT_GROUP_NAME
                                                         init_std, seed, support_dense=False, support_group=True)
     linear_logit = get_linear_logit(features, linear_feature_columns, init_std=init_std, seed=seed, prefix="linear", l2_reg=l2_reg_linear)
     if use_attention:
-        fm_logit = add_func([AFMLayer(attention_factor, l2_reg_att, afm_dropout, 
-                                    seed)(list(v)) for k, v in group_embedding_dict.items() if k in fm_group)])
+        fm_logit = add_func([AFMLayer(attention_factor, l2_reg_att, afm_dropout, seed)(list(v)) for k, v in group_embedding_dict.items() if k in fm_group])
     else:
         fm_logit = add_func([FM()(concat_func(v, axis=1)) for k, v in group_embedding_dict.items() if k in fm_group])
 

@@ -1,4 +1,43 @@
 import tensorflow as tf
+class Hash(tf.keras.layers.Layer):
+    """
+    hash the input to [0,num_buckets)
+    if mask_zero = True,0 or 0.0 will be set to 0,other value will be set in range[1,num_buckets)
+    """
+
+    def __init__(self, num_buckets, mask_zero=False, **kwargs):
+        self.num_buckets = num_buckets
+        self.mask_zero = mask_zero
+        super(Hash, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        # Be sure to call this somewhere!
+        super(Hash, self).build(input_shape)
+
+    def call(self, x, mask=None, **kwargs):
+        if x.dtype != tf.string:
+            x = tf.as_string(x, )
+        try:
+            hash_x = tf.string_to_hash_bucket_fast(x, self.num_buckets if not self.mask_zero else self.num_buckets - 1,
+                                                    name=None)  # weak hash
+        except:
+            hash_x = tf.strings.to_hash_bucket_fast(x, self.num_buckets if not self.mask_zero else self.num_buckets - 1,
+                                               name=None)  # weak hash
+        if self.mask_zero:
+            mask_1 = tf.cast(tf.not_equal(x, "0"), 'int64')
+            mask_2 = tf.cast(tf.not_equal(x, "0.0"), 'int64')
+            mask = mask_1 * mask_2
+            hash_x = (hash_x + 1) * mask
+        return hash_x
+
+    def compute_mask(self, inputs, mask):
+        return None
+
+    def get_config(self, ):
+        config = {'num_buckets': self.num_buckets, 'mask_zero': self.mask_zero}
+        base_config = super(Hash, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
 
 class NoMask(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
@@ -64,7 +103,7 @@ class Linear(tf.keras.layers.Layer):
 
     def get_config(self, ):                      #不知道存在的原因
         config = {"mode":self.mode, "l2_reg":self.l2_reg, "use_bias":self.use_bias}
-        base_config = super(Linear, self).get_config
+        base_config = super(Linear, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 def reduce_sum(input_tensor, axis=None, keep_dims=False, name=None, reduction_indices=None):
@@ -86,7 +125,7 @@ class Add(tf.keras.layers.Layer):   ##存在的意义就是啥？
     def __init__(self, **kwargs):
         super(Add, self).__init__(**kwargs)
     def build(self, input_shape):
-        super.(Add, self).build(input_shape)
+        super(Add, self).build(input_shape)
     def call(self, inputs, **kwargs):
         if not isinstance(inputs, list):
             return inputs
