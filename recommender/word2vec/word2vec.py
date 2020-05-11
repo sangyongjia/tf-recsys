@@ -4,16 +4,17 @@ import random
 import tensorflow as tf
 import math
 
-train_data = pd.read_csv("../../dataset/taobao_data/item2item.txt",names=['item','label'])
-
+#train_data = pd.read_csv("../../dataset/taobao_data/item2item.txt",names=['item','label'])
+'''
 files = "../../dataset/taobao_data/item2item.txt"
 column_names = ["item"]
-lalbel = [""]
-item = [""]
+
+l = [0]
+i = [0]
 
 def generate_batch(file_path=files, perform_shuffle=True, repeat_count=1,batch_size=1000):
     def decode_csv(line):
-        parsed_line = tf.io.decode_csv(line, record_defaults=label+item, field_delim=',')
+        parsed_line = tf.io.decode_csv(line, record_defaults=l+i, field_delim=',')
         label = parsed_line[1]
         del parsed_line[1]
         features = parsed_line  # Everything but last elements are the features
@@ -31,8 +32,22 @@ def generate_batch(file_path=files, perform_shuffle=True, repeat_count=1,batch_s
 
     dataset = dataset.make_one_shot_iterator()
     features, labels = dataset.get_next()
-    return features, labels
-
+    print("features:",features)
+    print("labels",labels)
+    print("labels[1]:",labels[0])
+    print("features[0]:",features['item'])
+    return features['item'], labels[0]
+'''
+train_data = pd.read_csv("../../dataset/taobao_data/item2item.txt",names=['item','label'],index_col=False,dtype={'item': 'Int64', 'label': 'Int64'})
+def generate_batch(batch_size=10):
+    data_index=0
+    #print(data_index)
+    while True:
+        data = train_data[data_index*batch_size:(data_index+1)*batch_size]
+        #print(data_index)
+        #print(data)
+        data_index+=1
+        yield  list(data['item']),list(data['label'])
 
 batch_size = 128
 embedding_size =128
@@ -47,7 +62,9 @@ graph = tf.Graph()
 with graph.as_default():
     #输入数据
     train_dataset = tf.placeholder(tf.int32, shape=[batch_size])
-    train_labels = tf.placeholder(tf.int32, shape=[batch_size,1])
+    train_labels = tf.placeholder(tf.int32, shape=[batch_size])
+    #train_labels = tf.expand_dims(train_labels, -1)
+    #print("train_labels:",train_labels)
     valid_dataset = tf.constant(valid_example, dtype=tf.int32)
 
     #定义变量
@@ -58,7 +75,7 @@ with graph.as_default():
     #本次训练数据对应的embedding
     embed = tf.nn.embedding_lookup(embeddings, train_dataset)
     loss = tf.reduce_mean(tf.nn.sampled_softmax_loss(weights=softmax_weights, biases=softmax_biases, 
-                                                     inputs=embed, labels=train_labels, num_sampled=num_sampled, 
+                                                     inputs=embed, labels=tf.expand_dims(train_labels,-1), num_sampled=num_sampled, 
                                                      num_classes=item_size))
     optimizer = tf.train.AdagradOptimizer(1.0).minimize(loss)
     
@@ -76,7 +93,8 @@ with graph.as_default():
         tf.global_variables_initializer().run()
         average_loss = 0 
         for step in range(num_steps+1):
-            batch_data, batch_labels = generate_batch(file_path=files, perform_shuffle=True, repeat_count=1,batch_size=100)
+            batch_data,batch_labels = next(generate_batch(batch_size=batch_size))
+            #print(batch_data,"\n", batch_labels)
             feed_dict = {train_dataset:batch_data, train_labels:batch_labels}
             _,l = session.run([optimizer, loss], feed_dict=feed_dict)
             average_loss += 1
