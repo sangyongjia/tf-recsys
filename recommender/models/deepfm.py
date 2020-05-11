@@ -17,7 +17,7 @@ def DeepFM(linear_feature_columns, dnn_feature_columns, fm_group=[DEFAULT_GROUP_
             l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=2020, dnn_dropout=0,
             dnn_activation="relu", dnn_use_bn=False, task="binary"):
 
-    features = build_input_features(linear_feature_columns, dnn_feature_columns)
+    features = build_input_features(linear_feature_columns + dnn_feature_columns)
     inputs_list = list(features.values())
 
     group_embedding_dict, dense_value_list = input_from_feature_columns(features, dnn_feature_columns, l2_reg_embedding,
