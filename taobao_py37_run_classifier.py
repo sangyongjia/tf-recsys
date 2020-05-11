@@ -10,9 +10,9 @@ import tensorflow.keras.backend as K
 
 from recommender.models import DeepFM,WDL,PNN,FNN,DCN,AFM,xDeepFM,AutoInt,FM,LR
 from recommender.inputs import SparseFeat, DenseFeat, get_feature_names
-#config=tf.compat.v1.ConfigProto(allow_soft_placement=True)
-#config.gpu_options.per_process_gpu_memory_fraction = 0.9
-#tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
+config=tf.compat.v1.ConfigProto(allow_soft_placement=True)
+config.gpu_options.per_process_gpu_memory_fraction = 0.4
+tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
 #tf.compat.v1.disable_eager_execution()
 #tf.enable_eager_execution()
 if __name__ == "__main__":
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
 
     # 3.generate input data for model
-    model_name="WDL"
+    model_name="DeepFM"
     callbacks = [tf.keras.callbacks.TensorBoard(
                       log_dir='./taobao_logs',
                       #histogram_freq=1,
