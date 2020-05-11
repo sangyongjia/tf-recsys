@@ -5,8 +5,11 @@ import tensorflow as tf
 import math
 
 train_data = pd.read_csv("../../dataset/taobao_data/item2item.txt",names=['item','label'])
-
-files = "../../dataset/taobao_data/item2item.txt"
+def generate_batch(batch_size=1000):
+    global data_index
+    data = tain_data[data_index*batch_size:(data_index+1)*batch_size]
+    print data
+'''files = "../../dataset/taobao_data/item2item.txt"
 column_names = ["item"]
 lalbel = [""]
 item = [""]
@@ -31,7 +34,7 @@ def generate_batch(file_path=files, perform_shuffle=True, repeat_count=1,batch_s
 
     dataset = dataset.make_one_shot_iterator()
     features, labels = dataset.get_next()
-    return features, labels
+    return features, labels'''
 
 
 batch_size = 128
