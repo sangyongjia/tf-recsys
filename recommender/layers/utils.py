@@ -68,14 +68,14 @@ class Linear(tf.keras.layers.Layer):
         if self.mode == 1:
             self.kernel = self.add_weight(name="linear_kernel", 
                                             shape=[int(input_shape[-1]),1], 
-                                            initializer=tf.keras.initializer.glorot_normal(), 
-                                            regularizer=tf.keras.regularizer.l2(self.l2_reg), 
+                                            initializer=tf.keras.initializers.glorot_normal(), 
+                                            regularizer=tf.keras.regularizers.l2(self.l2_reg), 
                                             trainable=True)
         elif self.mode == 2:
             self.kernel = self.add_weight(name="linear_kernel",
                                             shape=[int(input_shape[1][-1]),1],    ##在mode==2的情况下，input_shape[0]是sparse特征，input_shape[1]是dense特征
-                                            initializer=tf.keras.initializer.glorot_normal(),
-                                            regularizer=tf.keras.regularizer.l2(self.l2_reg),
+                                            initializer=tf.keras.initializers.glorot_normal(),
+                                            regularizer=tf.keras.regularizers.l2(self.l2_reg),
                                             trainable=True)
         super(Linear, self).build(input_shape)
         pass
@@ -113,6 +113,7 @@ def reduce_sum(input_tensor, axis=None, keep_dims=False, name=None, reduction_in
         return tf.reduce_sum(input_tensor, axis=axis, keep_dims=keep_dims, name=name)
 
 def concat_func(inputs, axis=-1, mask=False):
+    #print("inputs:",inputs)
     if not mask:
         inputs = list(map(NoMask(), inputs))   #NoMask??
     if len(inputs) == 1:

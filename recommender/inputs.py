@@ -226,7 +226,7 @@ def combined_dnn_input(sparse_embedding_list, dense_value_list):
     if len(sparse_embedding_list) > 0 and len(dense_value_list) > 0:
         sparse_dnn_input = Flatten()(concat_func(sparse_embedding_list))
         dense_dnn_input = Flatten()(concat_func(dense_value_list))
-        return concat_func(sparse_dnn_input, dense_dnn_input)
+        return concat_func([sparse_dnn_input, dense_dnn_input])
     elif len(sparse_embedding_list) > 0:
         return Flatten()(concat_func(sparse_embedding_list))
     elif len(dense_value_list) > 0:

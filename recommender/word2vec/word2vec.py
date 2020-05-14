@@ -7,7 +7,6 @@ import math
 #train_data = pd.read_csv("../../dataset/taobao_data/item2item.txt",names=['item','label'])
 '''
 files = "../../dataset/taobao_data/item2item.txt"
->>>>>>> 8834240198a8906718b2b054995349f3b0ba25f4
 column_names = ["item"]
 
 l = [0]
