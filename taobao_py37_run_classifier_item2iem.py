@@ -8,9 +8,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 import tensorflow.keras.backend as K
 
-from deepctr.models import DeepFM,WDL,PNN,FNN,DCN,AFM,xDeepFM,AutoInt,FM,LR
-from deepctr.inputs import SparseFeat, DenseFeat, get_feature_names
-
+from recommender.models import DeepFM,WDL,PNN,FNN,DCN,AFM,xDeepFM,AutoInt,FM,LR
+from recommender.inputs import SparseFeat, DenseFeat, get_feature_names
 config=tf.compat.v1.ConfigProto(allow_soft_placement=True)
 config.gpu_options.per_process_gpu_memory_fraction = 0.4
 tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
@@ -20,16 +19,18 @@ if __name__ == "__main__":
     print("start to read data")
     #sparse_features = ['C' + str(i) for i in range(1, 4)]
     #dense_features = ['I' + str(i) for i in range(1, 14)]
+    dense_features = ['e'+str(i) for i in range(128)]
     sparse_features= ["userid","item","category"]
-    column_names =["userid","item","category"]
+    column_names =["userid","item","category"] + dense_features
     label_name = 'buy_flag'
     #LABELS = [0, 1]
     l = [0.0]
     b = [[""]]*3
+    dense = [[0.0]]*128
     
     def my_input_fn1(file_path=None, perform_shuffle=True, repeat_count=1, batch_size=1000):
         def decode_csv(line):
-            parsed_line = tf.io.decode_csv(line, record_defaults=b+l, field_delim=',')
+            parsed_line = tf.io.decode_csv(line, record_defaults=b+l+dense, field_delim=',')
             label = parsed_line[3]  
             del parsed_line[3]  
             #for i in range(13):
@@ -39,7 +40,7 @@ if __name__ == "__main__":
             return d
 
         dataset = (tf.data.TextLineDataset(file_path, num_parallel_reads=40)  # Read text file
-               .map(decode_csv,num_parallel_calls=40))  # Transform each elem by applying decode_csv fn
+               .map(decode_csv,num_parallel_calls=40))  # Trans:form each elem by applying decode_csv fn
         if perform_shuffle:
         # Randomizes input using a window of 256 elements (read into memory)
             dataset = dataset.shuffle(buffer_size = batch_size*8)
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     #userid: 29154
     vocabulary_size = {"item":1500000,"category":14000,"userid":60000}
     fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=vocabulary_size[feat], embedding_dim=8, use_hash=True,dtype='string')
-                           for i,feat in enumerate(sparse_features)]
+                           for i,feat in enumerate(sparse_features)] + [DenseFeat(feat, 1,) for feat in dense_features]
     
     dnn_feature_columns = fixlen_feature_columns
     linear_feature_columns = fixlen_feature_columns
@@ -123,18 +124,18 @@ if __name__ == "__main__":
         batch_size = 2000
         train_steps = int(2196682/batch_size)
         val_steps = int(549170/batch_size)
-        features, labels = my_input_fn1(file_path='./dataset/taobao_data/data_train.csv', perform_shuffle=True, repeat_count=epochs, batch_size=batch_size)
-        val_features, val_labels = my_input_fn1(file_path='./dataset/taobao_data/data_test.csv', perform_shuffle=False, repeat_count=epochs,batch_size=batch_size)
-        pred_features, pred_labels = my_input_fn1(file_path='./dataset/taobao_data/data_test.csv', perform_shuffle=False, repeat_count=1,batch_size=batch_size)
+        features, labels = my_input_fn1(file_path='./dataset/taobao_data/data_train_embedding', perform_shuffle=True, repeat_count=epochs, batch_size=batch_size)
+        val_features, val_labels = my_input_fn1(file_path='./dataset/taobao_data/data_test_embedding', perform_shuffle=False, repeat_count=epochs,batch_size=batch_size)
+        pred_features, pred_labels = my_input_fn1(file_path='./dataset/taobao_data/data_test_embedding', perform_shuffle=False, repeat_count=1,batch_size=batch_size)
         pred_steps = val_steps
     else:
         epochs = 1
         batch_size = 1000
         train_steps = int(100000/batch_size)
         val_steps = int(100000/batch_size)
-        features, labels = my_input_fn1(file_path='./data/dac_sample.txt', perform_shuffle=True, repeat_count=epochs, batch_size=batch_size)
-        val_features, val_labels = my_input_fn1(file_path='./data/dac_sample.txt', perform_shuffle=False, repeat_count=epochs, batch_size=batch_size)
-        pred_features, pred_labels = my_input_fn1(file_path='./data/dac_sample.txt', perform_shuffle=False, repeat_count=1, batch_size=batch_size)
+        features, labels = my_input_fn1(file_path='../dataset/dac_sample.txt', perform_shuffle=True, repeat_count=epochs, batch_size=batch_size)
+        val_features, val_labels = my_input_fn1(file_path='../dataset/dac_sample.txt', perform_shuffle=False, repeat_count=epochs, batch_size=batch_size)
+        pred_features, pred_labels = my_input_fn1(file_path='../dataset/dac_sample.txt', perform_shuffle=False, repeat_count=1, batch_size=batch_size)
         pred_steps = val_steps
     #with tf.device('gpu:0'):
     #model_name="FNN"
