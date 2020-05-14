@@ -3,7 +3,7 @@ import numpy as np
 import random
 import tensorflow as tf
 import math
-
+import time
 #train_data = pd.read_csv("../../dataset/taobao_data/item2item.txt",names=['item','label'])
 '''
 files = "../../dataset/taobao_data/item2item.txt"
@@ -38,7 +38,12 @@ def generate_batch(file_path=files, perform_shuffle=True, repeat_count=1,batch_s
     print("features[0]:",features['item'])
     return features['item'], labels[0]
 '''
-train_data = pd.read_csv("../../dataset/taobao_data/item2item.txt",names=['item','label'],index_col=False,dtype={'item': 'Int64', 'label': 'Int64'})
+print("start")
+a= time.time()
+train_data = pd.read_csv("../../dataset/taobao_data/item2item_im.txt",names=['item','label'],index_col=False,dtype={'item': 'Int64', 'label': 'Int64'})
+print("read data finished")
+b= time.time()
+print("load data cost time:",b-a)
 def generate_batch(batch_size=10):
     data_index=0
     #print(data_index)
@@ -49,17 +54,18 @@ def generate_batch(batch_size=10):
         data_index+=1
         yield  list(data['item']),list(data['label'])
 
-batch_size = 128
+batch_size = 1280
 embedding_size =128
 #skip_window=1
 valid_size = 16
 valid_window = 100
 valid_example = np.array(random.sample(range(valid_window), valid_size))
-num_sampled = 64
-item_size = 5163068
+num_sampled = 640
+item_size = 678842
 
 graph = tf.Graph()
 with graph.as_default():
+#with graph.as_default(),tf.device('/gpu:0'):
     #输入数据
     train_dataset = tf.placeholder(tf.int32, shape=[batch_size])
     train_labels = tf.placeholder(tf.int32, shape=[batch_size])
@@ -88,7 +94,7 @@ with graph.as_default():
     similarity = tf.matmul(valid_embeddings, tf.transpose(normalized_embeddings))
 
     ##train
-    num_steps = 100000
+    num_steps = 300000
     with tf.Session(graph=graph) as session:
         tf.global_variables_initializer().run()
         average_loss = 0 
@@ -97,8 +103,8 @@ with graph.as_default():
             #print(batch_data,"\n", batch_labels)
             feed_dict = {train_dataset:batch_data, train_labels:batch_labels}
             _,l = session.run([optimizer, loss], feed_dict=feed_dict)
-            average_loss += 1
-            if step % 200 ==0:
+            average_loss += l
+            if step % 2000 ==0:
                 if step > 0:
                     average_loss = average_loss / 2000
                 print("average_loss at step: {} is:{}".format(step, average_loss))
@@ -108,3 +114,11 @@ with graph.as_default():
                 for i in range(valid_size):
                     pass
         final_embeddings = normalized_embeddings.eval()
+        #embeddings_val = sess.run(embeddings)
+        #word_to_idx={.....}
+        with open('../../dataset/taobao_data/embeddings.txt', 'w') as file_:
+            for i in range(item_size):
+                embed = final_embeddings[i, :]
+                #word = word_to_idx[i]
+                word = i
+                file_.write('%s %s\n' % (word, ' '.join(map(str, embed))))
