@@ -10,7 +10,7 @@ from ..layers.interaction import FM
 from ..layers.core import PredictionLayer
 
 
-def FM(linear_feature_columns, dnn_feature_columns, fm_group=[DEFAULT_GROUP_NAME],l2_reg_linear=0.00001, 
+def FM1(linear_feature_columns, dnn_feature_columns, fm_group=[DEFAULT_GROUP_NAME],l2_reg_linear=0.00001, 
             l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=2020, task="binary"):
 
     features = build_input_features(linear_feature_columns + dnn_feature_columns)
