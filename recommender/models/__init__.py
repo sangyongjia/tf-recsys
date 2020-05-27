@@ -17,10 +17,10 @@ from .xdeepfm import xDeepFM
 #from .dsin import DSIN
 #from .fibinet import FiBiNET
 #from .flen import FLEN
-from .fm import FM
+from .fm import FM1
 from .lr import LR
 
 #__all__ = ["AFM", "CCPM","DCN", "MLR",  "DeepFM", "FM", "LR",
 #           "MLR", "NFM", "DIN", "DIEN", "FNN", "PNN", "WDL", "xDeepFM", "AutoInt", "ONN", "FGCNN", "DSIN", "FiBiNET", 'FLEN']
-__all__ = ["AFM","DCN","DeepFM", "FM", "LR",
+__all__ = ["AFM","DCN","DeepFM", "FM1", "LR",
            "MLR", "NFM", "FNN", "PNN", "WDL", "xDeepFM", "AutoInt"]
