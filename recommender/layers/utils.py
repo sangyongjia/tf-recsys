@@ -113,9 +113,10 @@ def reduce_sum(input_tensor, axis=None, keep_dims=False, name=None, reduction_in
         return tf.reduce_sum(input_tensor, axis=axis, keep_dims=keep_dims, name=name)
 
 def concat_func(inputs, axis=-1, mask=False):
-    #print("inputs:",inputs)
+    #print("*****inputs:",inputs)
     if not mask:
         inputs = list(map(NoMask(), inputs))   #NoMask??
+    #print("*****888inputs:",inputs)
     if len(inputs) == 1:
         return inputs[0]
     else:

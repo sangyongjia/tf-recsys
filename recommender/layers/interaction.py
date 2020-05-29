@@ -36,6 +36,7 @@ class FM(Layer):
     def call(self, inputs, **kwargs):
         if K.ndim(inputs) != 3:
             raise ValueError("Unexpected inputs dimensions %d, expect to be 3 dimensions"% (K.ndim(inputs))) 
+        print("******",inputs)
         concated_embeds_value = inputs
         square_of_sum = tf.square(reduce_sum(concated_embeds_value, axis=1, keep_dims=True))
         sum_of_square = reduce_sum(concated_embeds_value * concated_embeds_value, axis=1, keep_dims=True)

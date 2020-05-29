@@ -21,7 +21,7 @@ def FM1(linear_feature_columns, dnn_feature_columns, fm_group=[DEFAULT_GROUP_NAM
     
     linear_logit = get_linear_logit(features, linear_feature_columns, init_std=init_std,
                                     seed=seed, prefix="linear",l2_reg=l2_reg_linear)
-
+                                       
     fm_logit = add_func([FM()(concat_func(v, axis=1)) for k, v in group_embedding_dict.items() if k in fm_group])
     final_logit = add_func([linear_logit, fm_logit])
 

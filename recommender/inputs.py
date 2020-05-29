@@ -28,7 +28,7 @@ class SparseFeat(namedtuple('SparseFeat',['name','vocabulary_size','embedding_di
         if embedding_name is None:
             embedding_name = name
         if embedding_dim == 'auto':
-            embedding_dim = 6 * int(pow(vocabulary_size, 0.25)) ##这个选择由什么玄机？
+            embedding_dim = 6 * int(pow(vocabulary_size, 0.25)) ##这个选择由什么玄机？好记得是论文哪篇论文中有这么个选择的说法，但是不知道是否有啥效果（vocabulary size越大，其含的信息越多，对应需要的embedding size理论上也需要的越大）
         return super(SparseFeat, cls).__new__(cls, name, vocabulary_size, embedding_dim, 
                                                     use_hash, dtype, embedding_name, group_name)  
 
@@ -64,7 +64,7 @@ def build_input_features(feature_columns, prefix=''):
             input_features[fc.name] = Input(shape=(1,), name=prefix+fc.name, dtype=fc.dtype)
             #input_features[fc.name] = Input(shape=(1,), name=prefix+fc.name, dtype=fc.dtype)
         elif isinstance(fc, DenseFeat):
-            input_features[fc.name] = Input(shape=(fc.dimension,), name=prefix+fc.name, dtype=fc.dtype)
+            input_features[fc.name] = Input(shape=(fc.dimension,), name=prefix+fc.name, dtype=fc.dtype)#这行中fc.dimension应该替换为1 才对。
         elif isinstance(fc, VarLenSparseFeat):
             input_features[fc.name] = Input(shape=(fc.maxlen,), name=prefix+fc.name, dtype=fc.dtype)
             if fc.weight_name is not None:
@@ -204,15 +204,19 @@ def get_linear_logit(features, feature_columns, units=1, use_bias=False, init_st
                                                     init_std, seed, prefix=prefix+str(i))[0] 
                                                     for i in range(units)]
     _ ,dense_input_list = input_from_feature_columns(features, linear_feature_columns, l2_reg, init_std, seed, prefix=prefix)
-
+    
     linear_logit_list = []
     for i in range(units):
         if len(linear_emb_list[i]) > 0 and len(dense_input_list) > 0:
+            #print('***************',linear_emb_list[i],)
+            #print('***************',dense_input_list)
             sparse_input = concat_func(linear_emb_list[i])
             dense_input = concat_func(dense_input_list)
             linear_logit = Linear(l2_reg, mode=2, use_bias=use_bias)([sparse_input, dense_input])
         elif len(linear_emb_list[i]) > 0:
+           
             sparse_input = concat_func(linear_emb_list[i])
+            #print("***********sparse_input:",sparse_input)
             linear_logit = Linear(l2_reg, mode=0, use_bias=use_bias)(sparse_input)
         elif len(dense_input_list) > 0:
             dense_input = concat_func(dense_input_list)

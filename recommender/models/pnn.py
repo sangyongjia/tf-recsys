@@ -25,7 +25,7 @@ def PNN(dnn_feature_columns, embedding_size=8, dnn_hidden_units=(128,128), l2_re
     sparse_embedding_list , dense_value_list = input_from_feature_columns(features, dnn_feature_columns,l2_reg_embedding, init_std, seed)
 
     inner_product = tf.keras.layers.Flatten()(InnerProductLayer()(sparse_embedding_list))
-    outter_product = tf.keras.layers.Flatten()(OutterProductLayer()(sparse_embedding_list))
+    outter_product = OutterProductLayer(kernel_type)(sparse_embedding_list)
 
     linear_signal = tf.keras.layers.Reshape([len(sparse_embedding_list) * embedding_size])(concat_func(sparse_embedding_list))
 

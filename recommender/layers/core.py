@@ -7,7 +7,7 @@ from .activation import activation_layer
 
 class DNN(Layer):
 
-    def __init__(self, hidden_units, activation="relu", l2_reg=0, dropout_rate=0, use_bn=False, seed=1024, **kwargs):
+    def __init__(self, hidden_units, activation="relu", l2_reg=0, dropout_rate=0, use_bn=False, seed=2020, **kwargs):
         self.hidden_units = hidden_units
         self.activation = activation
         self.dropout_rate = dropout_rate
@@ -78,7 +78,7 @@ class PredictionLayer(Layer):
             x = tf.nn.bias_add(x, self.global_bias, data_format="NHWC")
         if self.task == "binary":
             x = tf.sigmoid(x)
-        output = tf.reshape(x, (-1,1))
+        output = tf.reshape(x, (-1,1))#reshape中的-1的意思是，本维度不定，第二维设定为1；根据总数据和第二维为1来推断“-1”位置的维度。
         return output
     
     def compute_output_shape(self, input_shape): #不知道存在有啥用
@@ -88,3 +88,4 @@ class PredictionLayer(Layer):
         config = {'task': self.task, 'use_bias': self.use_bias}
         base_config = super(PredictionLayer, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
