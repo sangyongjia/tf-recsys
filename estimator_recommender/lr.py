@@ -4,7 +4,7 @@ from tensorflow import feature_column
 columns=['userid','item','category','buy_flag']  #decide by data source
 label_name="buy_flag" #also decide by data source
 batch_size=1000
-#tf.logging.set_verbosity(tf.logging.INFO)
+tf.logging.set_verbosity(tf.logging.INFO)
 def input_fn(file_path,epochs=1):
     dataset = tf.data.experimental.make_csv_dataset(file_path,
                                                     batch_size=batch_size,
