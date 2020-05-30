@@ -29,6 +29,7 @@ def model_fn(features, labels, mode, params):
 
     global_step = tf.train.get_or_create_global_step()  #?
 
+
     user_id = fc_transform('userid', 100, dtype=tf.int32)(features)
     category_id = fc_transform('category', 100, dtype=tf.int32)(features)
     item_id = fc_transform('item', 100, dtype=tf.int32)(features)
