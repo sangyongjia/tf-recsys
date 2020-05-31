@@ -1,6 +1,8 @@
 import tensorflow as tf 
 from tensorflow import feature_column
-
+from tensorflow.keras.initializers import RandomNormal
+from tensorflow.keras.regularizers import l2
+from tensorflow.keras.regularizers import l1
 columns=['userid','item','category','buy_flag']  #decide by data source
 label_name="buy_flag" #also decide by data source
 batch_size=1000
@@ -18,10 +20,10 @@ def input_fn(file_path,epochs=1):
 
 def fc_column(feature_name, hash_bucket_size, embedding_size=4, dtype=tf.string):
     f = feature_column.categorical_column_with_hash_bucket(feature_name, hash_bucket_size=hash_bucket_size, dtype=dtype)
-    f1 = feature_column.embedding_column(f, embedding_size)
+    f1 = feature_column.embedding_column(f, embedding_size, initializer=RandomNormal(mean=0.0, stddev=0.01, seed=2020))
     return f1
 
-def fc_transform(feature_name, hash_bucket_size, embedding_size=4, dtype=tf.string):
+def fc_transform(feature_name, hash_bucket_size, embedding_size=1, dtype=tf.string):
     feature_layer = tf.keras.layers.DenseFeatures([fc_column(feature_name, hash_bucket_size, embedding_size, dtype)])
     return feature_layer
 
@@ -29,13 +31,13 @@ def model_fn(features, labels, mode, params):
 
     global_step = tf.train.get_or_create_global_step()  #?
 
-    user_id = fc_transform('userid', 100, dtype=tf.int32)(features)
-    category_id = fc_transform('category', 100, dtype=tf.int32)(features)
-    item_id = fc_transform('item', 100, dtype=tf.int32)(features)
+    user_id = fc_transform('userid', 60000, dtype=tf.int32)(features)
+    category_id = fc_transform('category', 14000, dtype=tf.int32)(features)
+    item_id = fc_transform('item', 1500000, dtype=tf.int32)(features)
 
     layer1 = tf.keras.layers.Concatenate(axis=-1)([user_id, category_id, item_id])
     print("\n\nlayer1:\n\n",layer1)
-    output = tf.keras.layers.Dense(units=1, use_bias=True, activation='sigmoid',kernel_regularizer=None)(layer1)  #kernel_regularizer=tf.keras.regularizers.l1(l=0.01)
+    output = tf.keras.layers.Dense(units=1, use_bias=True, activation='sigmoid',kernel_regularizer=l2(1e5))(layer1)  #kernel_regularizer=tf.keras.regularizers.l1(l=0.01)
     print("\n\noutput:",output)
 
     if mode == tf.estimator.ModeKeys.PREDICT:
@@ -48,9 +50,9 @@ def model_fn(features, labels, mode, params):
     auc = tf.metrics.auc(labels=labels, predictions=output, name="auc")
 
     if mode == tf.estimator.ModeKeys.EVAL:
-        return tf.estimator.EstimatorSpec(mode=mode, loss=cross_entropy, val_metric_ops={"acc":accuracy,"auc":auc},evaluation_hooks=None)
+        return tf.estimator.EstimatorSpec(mode=mode, loss=cross_entropy, eval_metric_ops={"acc":accuracy,"auc":auc},evaluation_hooks=None)
     
-    optimizer = tf.train.AdadeltaOptimizer()
+    optimizer = tf.train.AdamOptimizer()
     train_op = optimizer.minimize(loss=cross_entropy, global_step=global_step)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -60,12 +62,12 @@ def model_fn(features, labels, mode, params):
 estimator = tf.estimator.Estimator(model_fn=model_fn, 
                                     model_dir="./mode_dir",
                                     config=tf.estimator.RunConfig(save_checkpoints_secs=300, keep_checkpoint_max=5),
-                                    params={"optimizer":"adadelta"})
+                                    params={"optimizer":"adam"})
 #hook = tf.train.ProfilerHook(save_steps=20,output_dir="./tracing", show_dataflow=True,show_memory=True)
 #hooks = [hook]
 tf.estimator.train_and_evaluate(estimator,
-                                train_spec=tf.estimator.TrainSpec(input_fn=lambda: input_fn("/Users/sangyongjia/Documents/MachineLearning/github/MovieRecommendation/LFM/tf-recsys/dataset/taobao_data/data_train.csv",epochs=10),hooks=None),
-                                eval_spec=tf.estimator.EvalSpec(throttle_secs=6,input_fn=lambda:input_fn("/Users/sangyongjia/Documents/MachineLearning/github/MovieRecommendation/LFM/tf-recsys/dataset/taobao_data/data_test.csv",epochs=1), steps=None),
+                                train_spec=tf.estimator.TrainSpec(input_fn=lambda: input_fn("../dataset/taobao_data/data_train.csv",epochs=1),hooks=None),
+                                eval_spec=tf.estimator.EvalSpec(throttle_secs=6,input_fn=lambda:input_fn("../dataset/taobao_data/data_test.csv",epochs=1), steps=None),
                                 )
 
 '''tf.estimator.train_and_evaluate(estimator,train_spec=tf.estimator.TrainSpec(input_fn=lambda: input_fn("../DeepCTR/data/taobao_data/data_train.csv",epochs=10),hooks=hooks),
@@ -74,4 +76,3 @@ tf.estimator.train_and_evaluate(estimator,
 #estimator.train(input_fn=lambda: input_fn("/Users/sangyongjia/Documents/MachineLearning/github/MovieRecommendation/LFM/tf-recsys/dataset/taobao_data/data_train.csv"))
 #data = input_fn("/Users/sangyongjia/Documents/MachineLearning/github/MovieRecommendation/LFM/tf-recsys/dataset/taobao_data/data_train.csv")
 print("hello world")
-'''hhhjhjh'''
