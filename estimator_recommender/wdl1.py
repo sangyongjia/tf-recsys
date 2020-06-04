@@ -40,13 +40,19 @@ model.compile("adam", "binary_crossentropy", metrics=[tf.keras.metrics.BinaryCro
 
 checkpointing_config = tf.estimator.RunConfig(
     model_dir="./model_dir",
-    log_step_count_steps=500,
+    log_step_count_steps=10,
     #save_checkpoints_secs=30,  # Save checkpoints every 20 minutes.
-    save_checkpoints_steps=500,
+    save_checkpoints_steps=10,
     keep_checkpoint_max=3,  # Retain the 10 most recent checkpoints.
 )
 estimator = tf.keras.estimator.model_to_estimator(keras_model=model, model_dir="./model_dir", config=checkpointing_config)
-estimator=tf.estimator.add_metrics(estimator=estimator,metric_fn=tf.keras.metrics.AUC())
+
+
+def my_auc(labels, predictions):
+    auc_metric = tf.keras.metrics.AUC(name="my_auc")
+    auc_metric.update_state(y_true=labels, y_pred=predictions)
+    return {'auc': auc_metric}
+estimator=tf.estimator.add_metrics(estimator=estimator,metric_fn=my_auc)
 #estimator = tf.estimator.Estimator(model_fn=model_fn, model_dir=None, config=checkpointing_config, params={}, warm_start_from=None)
 
 #saved model part
