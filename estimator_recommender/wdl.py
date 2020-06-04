@@ -22,6 +22,8 @@ def input_fn(file_path,epochs,batch_size=1000,columns_name=['userid','item','cat
     dataset = dataset.shuffle(batch_size).prefetch(tf.data.experimental.AUTOTUNE)
     return dataset
 
+tf.nn.embedding_lookup()
+tf.feature_column.embedding_column()
 def load_conf(filename):
     with open("./conf/"+filename, 'r') as f:
         return yaml.load(f)

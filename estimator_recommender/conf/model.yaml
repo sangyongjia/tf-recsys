@@ -1,0 +1,21 @@
+dnn_hidden_units: [400,200,70]
+learning_rate: 0.01
+cross_layer_size: [200,200,100]
+dnn_dropout_rate: 0.8
+dnn_decay_rate: 0.8
+field_num: 26
+embed_dim: 12
+activation: selu
+initializer: glorot_normal
+embed_initializer:
+cross_dcn_layer_size: 3
+l2_reg_dnn: 0.00001
+seed: 2020
+
+#TODO 应该在model参数层面对不同的模型的不同参数进行分解。例如
+#TODO 应该把各模型共有的部分提取出来（然后一个模型保存一份参数即可）
+#WDL:
+#  dnn_hidden_units: [400,200,70]
+#  learning_rate: 0.01
+#DCN:
+#  cross_layer_size: [200,200,100]
