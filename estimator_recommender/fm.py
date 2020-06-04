@@ -1,6 +1,9 @@
 import tensorflow as tf
 
 tf.logging.set_verbosity(tf.logging.INFO)
+config=tf.compat.v1.ConfigProto(allow_soft_placement=True)
+config.gpu_options.per_process_gpu_memory_fraction = 0.1
+tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
 
 column_names=['userid','item','category','buy_flag']  #decided by data in order
 label_name="buy_flag" #also decide by data
@@ -71,9 +74,10 @@ def model_fn(features, labels, mode, params):
     pass
 checkpointing_config = tf.estimator.RunConfig(
     model_dir="./model_dir",
-    log_step_count_steps=500,
+    tf_random_seed = 2020,
+    log_step_count_steps=2000,
     #save_checkpoints_secs=30,  # Save checkpoints every 20 minutes.
-    save_checkpoints_steps=500,
+    save_checkpoints_steps=2000,
     keep_checkpoint_max=5,  # Retain the 10 most recent checkpoints.
 )
 
@@ -88,7 +92,7 @@ exporters = [best_exporter]
 
 tf.estimator.train_and_evaluate(estimator=estimator,
                                 train_spec=tf.estimator.TrainSpec(input_fn=lambda:input_fn(file_path="../dataset/taobao_data/data_train.csv",
-                                                                                           epochs=1,
+                                                                                           epochs=30,
                                                                                            batch_size=1000,
                                                                                            column_names=column_names,
                                                                                            label_name=label_name),
@@ -104,7 +108,7 @@ tf.estimator.train_and_evaluate(estimator=estimator,
                                                                 hooks=None,
                                                                 exporters=exporters,
                                                                 start_delay_secs=120,
-                                                                throttle_secs=600))
+                                                                throttle_secs=6))
 
 
 

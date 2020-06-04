@@ -6,6 +6,10 @@ from tensorflow.keras.initializers import glorot_normal
 from tensorflow.keras.initializers import Zeros
 
 import yaml
+config=tf.compat.v1.ConfigProto(allow_soft_placement=True)
+config.gpu_options.per_process_gpu_memory_fraction = 0.1
+tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
+
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
@@ -22,8 +26,6 @@ def input_fn(file_path,epochs,batch_size=1000,columns_name=['userid','item','cat
     dataset = dataset.shuffle(batch_size).prefetch(tf.data.experimental.AUTOTUNE)
     return dataset
 
-tf.nn.embedding_lookup()
-tf.feature_column.embedding_column()
 def load_conf(filename):
     with open("./conf/"+filename, 'r') as f:
         return yaml.load(f)
@@ -117,6 +119,7 @@ def model(wide_part, deep_part):
 
 
 def model_fn(features, labels, mode, params, config):
+    global_step = tf.train.get_or_create_global_step() 
     wide_part = tf.feature_column.input_layer(features,params["wide_part"])
     deep_part = tf.feature_column.input_layer(features,params["deep_part"])
     print('wide_part_features: {}'.format(wide_part.get_shape()))
@@ -133,7 +136,7 @@ def model_fn(features, labels, mode, params, config):
         return tf.estimator.EstimatorSpec(mode=mode,predictions={"output":predictions},loss=cross_entropy,eval_metric_ops={"acc":accuracy,"auc":auc},evaluation_hooks=None)
 
     optimizer = tf.train.AdamOptimizer()
-    train_op = optimizer.minimize(loss=cross_entropy,)#TODO global_step= 加不加这个有什么区别？
+    train_op = optimizer.minimize(loss=cross_entropy,global_step=global_step)#TODO global_step= 加不加这个有什么区别？不加没有打印信息
     if mode == tf.estimator.ModeKeys.TRAIN:
         return tf.estimator.EstimatorSpec(mode=mode,loss=cross_entropy,train_op=train_op)
 
