@@ -83,9 +83,7 @@ def build_model_columns():
     #tf.logging.info
     return wide_part,deep_part
 
-wide,deep = build_model_columns()
-print(wide)
-print(deep)
+
 def model(wide_part, deep_part):
     train_conf = load_conf("train.yaml")["train"]
     model_name = train_conf["model_name"]
@@ -116,9 +114,13 @@ def model(wide_part, deep_part):
         dnn_logit = Dense(1, use_bias=False, activation=None)(dnn_output)
         model_output = dnn_logit + tf.reduce_sum(wide_part, axis=1, keep_dims=True)
     elif model_name == "LR":
-        model_output = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
+        print("wide_part:",wide_part)
 
-    return model_output
+        wide_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
+        print("wide_part_l2",wide_part_l2)
+        model_output = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
+        print("model_output",model_output)
+    return model_output, wide_part_l2
 
 
 def model_fn(features, labels, mode, params, config):
@@ -127,12 +129,12 @@ def model_fn(features, labels, mode, params, config):
     deep_part = tf.feature_column.input_layer(features,params["deep_part"])
     print('wide_part_features: {}'.format(wide_part.get_shape()))
     print('deep_part_features: {}'.format(deep_part.get_shape()))
-    logits = model(wide_part, deep_part,) #TODO, add is_training or
+    logits, regularizer = model(wide_part, deep_part,) #TODO, add is_training or
     predictions = tf.nn.sigmoid(logits)
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions={"output":predictions})
     #cross_entropy = tf.losses.sigmoid_cross_entropy()
-    cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.cast(labels,tf.float32),logits=tf.squeeze(predictions)))
+    cross_entropy = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.cast(labels,tf.float32),logits=tf.squeeze(predictions)))+regularizer
     accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions, name="acc")
     auc = tf.metrics.auc(labels=labels, predictions=predictions, name="auc")
     if mode == tf.estimator.ModeKeys.EVAL:
@@ -145,12 +147,13 @@ def model_fn(features, labels, mode, params, config):
 
 def build_estimator(model_dir):
     wide_part, deep_part = build_model_columns()
-    config = tf.ConfigProto(device_count={"GPU": 1},  # limit to GPU usage   #TODO 待研究这个是做什么的
-                            inter_op_parallelism_threads=0,
-                            intra_op_parallelism_threads=0,
-                            log_device_placement=True)
+    #config = tf.ConfigProto(device_count={"CPU": 1},  # limit to GPU usage   #TODO 待研究这个是做什么的
+    #                        inter_op_parallelism_threads=0,
+    #                        intra_op_parallelism_threads=0,
+    #                        log_device_placement=True)
     run_config = load_conf("train.yaml")['runconfig']
-    run_config = tf.estimator.RunConfig(**run_config).replace(session_config=config)  #TODO 直接赋值不行吗？这么复杂的操作
+    #run_config = tf.estimator.RunConfig(**run_config).replace(session_config=config)  #TODO 直接赋值不行吗？这么复杂的操作
+    run_config = tf.estimator.RunConfig(**run_config)
     model_config = load_conf("model.yaml")
     params = {"wide_part": wide_part,"deep_part":deep_part,}
     return tf.estimator.Estimator(model_dir=model_dir,
