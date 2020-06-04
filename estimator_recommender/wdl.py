@@ -114,8 +114,11 @@ def model(wide_part, deep_part):
         dnn_hidden_units =model_conf["dnn_hidden_units"]
         dnn_output = DNN(dnn_hidden_units, activation_fn, l2_reg_dnn, dnn_dropout_rate, False, seed)(deep_part)
         dnn_logit = Dense(1, use_bias=False, activation=None)(dnn_output)
+        model_output = dnn_logit + tf.reduce_sum(wide_part, axis=1, keep_dims=True)
+    elif model_name == "LR":
+        model_output = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
 
-    return dnn_logit + tf.reduce_sum(wide_part,axis=1,keep_dims=True)
+    return model_output
 
 
 def model_fn(features, labels, mode, params, config):
