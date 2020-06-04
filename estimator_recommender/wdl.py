@@ -7,7 +7,7 @@ from tensorflow.keras.initializers import Zeros
 
 import yaml
 config=tf.compat.v1.ConfigProto(allow_soft_placement=True)
-config.gpu_options.per_process_gpu_memory_fraction = 0.1
+config.gpu_options.per_process_gpu_memory_fraction = 0.03
 tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
 
 
@@ -83,9 +83,6 @@ def build_model_columns():
     #tf.logging.info
     return wide_part,deep_part
 
-wide,deep = build_model_columns()
-print(wide)
-print(deep)
 def model(wide_part, deep_part):
     train_conf = load_conf("train.yaml")["train"]
     model_name = train_conf["model_name"]
@@ -116,7 +113,12 @@ def model(wide_part, deep_part):
         dnn_logit = Dense(1, use_bias=False, activation=None)(dnn_output)
         model_output = dnn_logit + tf.reduce_sum(wide_part, axis=1, keep_dims=True)
     elif model_name == "LR":
-        model_output = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
+        print("wide_part:",wide_part)
+        wide_part_l2 = tf.contrib.layers.l2_regularizer(1e-3)(wide_part)
+        print("wide_part_l2:",wide_part_l2)
+        model_output = tf.reduce_sum(wide_part, axis=1, keep_dims=True) + wide_part_l2
+        #model_output = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
+        print("model_output:",model_output)
 
     return model_output
 
@@ -145,6 +147,7 @@ def model_fn(features, labels, mode, params, config):
 
 def build_estimator(model_dir):
     wide_part, deep_part = build_model_columns()
+    print(wide_part,deep_part)
     config = tf.ConfigProto(device_count={"GPU": 1},  # limit to GPU usage   #TODO 待研究这个是做什么的
                             inter_op_parallelism_threads=0,
                             intra_op_parallelism_threads=0,

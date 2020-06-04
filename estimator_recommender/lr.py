@@ -61,12 +61,12 @@ def model_fn(features, labels, mode, params):
 
 estimator = tf.estimator.Estimator(model_fn=model_fn, 
                                     model_dir="./mode_dir",
-                                    config=tf.estimator.RunConfig(save_checkpoints_secs=300, keep_checkpoint_max=5),
+                                    config=tf.estimator.RunConfig(save_checkpoints_steps=50, keep_checkpoint_max=5),
                                     params={"optimizer":"adam"})
 #hook = tf.train.ProfilerHook(save_steps=20,output_dir="./tracing", show_dataflow=True,show_memory=True)
 #hooks = [hook]
 tf.estimator.train_and_evaluate(estimator,
-                                train_spec=tf.estimator.TrainSpec(input_fn=lambda: input_fn("../dataset/taobao_data/data_train.csv",epochs=1),hooks=None),
+                                train_spec=tf.estimator.TrainSpec(input_fn=lambda: input_fn("../dataset/taobao_data/data_train.csv",epochs=30),hooks=None),
                                 eval_spec=tf.estimator.EvalSpec(throttle_secs=6,input_fn=lambda:input_fn("../dataset/taobao_data/data_test.csv",epochs=1), steps=None),
                                 )
 
