@@ -18,9 +18,9 @@ def input_fn(file_path,epochs=1):
     return dataset
 
 
-def fc_column(feature_name, hash_bucket_size, embedding_size=4, dtype=tf.string):
+def fc_column(feature_name, hash_bucket_size, embedding_size=1, dtype=tf.string):
     f = feature_column.categorical_column_with_hash_bucket(feature_name, hash_bucket_size=hash_bucket_size, dtype=dtype)
-    f1 = feature_column.embedding_column(f, embedding_size, initializer=RandomNormal(mean=0.0, stddev=0.01, seed=2020))
+    f1 = feature_column.embedding_column(f, embedding_size, initializer=RandomNormal(mean=0.1, stddev=0.001, seed=2020),trainable=True)
     return f1
 
 def fc_transform(feature_name, hash_bucket_size, embedding_size=1, dtype=tf.string):
@@ -37,7 +37,13 @@ def model_fn(features, labels, mode, params):
 
     layer1 = tf.keras.layers.Concatenate(axis=-1)([user_id, category_id, item_id])
     print("\n\nlayer1:\n\n",layer1)
-    output = tf.keras.layers.Dense(units=1, use_bias=True, activation='sigmoid',kernel_regularizer=l2(1e5))(layer1)  #kernel_regularizer=tf.keras.regularizers.l1(l=0.01)
+    output = tf.keras.layers.Dense(units=1, 
+				   use_bias=True, 
+                                   activation=tf.sigmoid,
+                                   kernel_regularizer=l2(1e-5),
+                                   kernel_initializer=tf.keras.initializers.glorot_normal(),
+                                   bias_initializer=tf.keras.initializers.Zeros())(layer1)  #kernel_regularizer=tf.keras.regularizers.l1(l=0.01)
+    #output = tf.sigmoid(output1)
     print("\n\noutput:",output)
 
     if mode == tf.estimator.ModeKeys.PREDICT:
@@ -45,14 +51,15 @@ def model_fn(features, labels, mode, params):
 
     print("**********labels:",labels)
     print("**********output:",output)
+    #tf.losses.sigmoid_cross_entropy
     cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.cast(labels,tf.float32),logits=tf.squeeze(output)))
-    accuracy = tf.metrics.accuracy(labels=labels, predictions=output, name="acc")
+    #accuracy = tf.metrics.accuracy(labels=labels, predictions=output, name="acc")
     auc = tf.metrics.auc(labels=labels, predictions=output, name="auc")
 
     if mode == tf.estimator.ModeKeys.EVAL:
-        return tf.estimator.EstimatorSpec(mode=mode, loss=cross_entropy, eval_metric_ops={"acc":accuracy,"auc":auc},evaluation_hooks=None)
+        return tf.estimator.EstimatorSpec(mode=mode, loss=cross_entropy, eval_metric_ops={"auc":auc},evaluation_hooks=None)
     
-    optimizer = tf.train.AdamOptimizer()
+    optimizer = tf.train.AdamOptimizer(learning_rate=0.001,epsilon=1e-07,)
     train_op = optimizer.minimize(loss=cross_entropy, global_step=global_step)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -61,7 +68,7 @@ def model_fn(features, labels, mode, params):
 
 estimator = tf.estimator.Estimator(model_fn=model_fn, 
                                     model_dir="./mode_dir",
-                                    config=tf.estimator.RunConfig(save_checkpoints_steps=50, keep_checkpoint_max=5),
+                                    config=tf.estimator.RunConfig(save_checkpoints_steps=2000, keep_checkpoint_max=5),
                                     params={"optimizer":"adam"})
 #hook = tf.train.ProfilerHook(save_steps=20,output_dir="./tracing", show_dataflow=True,show_memory=True)
 #hooks = [hook]

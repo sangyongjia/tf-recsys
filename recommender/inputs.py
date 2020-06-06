@@ -79,7 +79,7 @@ def get_feature_names(feature_columns):
     features = build_input_features(feature_columns)
     return list(features)
 
-def create_embedding_dict(sparse_feature_columns, varlen_sparse_feature_columns, init_std, seed, l2_reg, prefix="sparse_", seq_mask_zero=True): #prefix没用了
+def create_embedding_dict(sparse_feature_columns, varlen_sparse_feature_columns, init_std, seed, l2_reg=1e-5, prefix="sparse_", seq_mask_zero=True): #prefix没用了
     sparse_embedding = {feat.embedding_name: Embedding(feat.vocabulary_size, feat.embedding_dim,
                                                         embeddings_initializer=RandomNormal(mean=0.0, stddev=init_std, seed=seed),
                                                         embeddings_regularizer=l2(l2_reg)

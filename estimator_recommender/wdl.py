@@ -1,6 +1,7 @@
 import tensorflow as tf
 from layers.core import DNN
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.initializers import RandomNormal
 
 from tensorflow.keras.initializers import glorot_normal
 from tensorflow.keras.initializers import Zeros
@@ -45,7 +46,7 @@ def build_model_columns():
             wide_part.append(tf.feature_column.embedding_column(col,
                                                                 dimension=1,
                                                                 combiner="sum",
-                                                                initializer=None,
+                                                                initializer=RandomNormal(mean=0.0, stddev=0.0001, seed=2020),
                                                                 ckpt_to_load_from=None,
                                                                 tensor_name_in_ckpt=None,
                                                                 max_norm=None,
@@ -132,7 +133,7 @@ def model_fn(features, labels, mode, params, config):
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions={"output":predictions})
     #cross_entropy = tf.losses.sigmoid_cross_entropy()
-    cross_entropy = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.cast(labels,tf.float32),logits=tf.squeeze(predictions)))+regularizer
+    cross_entropy = tf.add(tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.cast(labels,tf.float32),logits=tf.squeeze(predictions))),regularizer)
     accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions, name="acc")
     auc = tf.metrics.auc(labels=labels, predictions=predictions, name="auc")
     if mode == tf.estimator.ModeKeys.EVAL:
