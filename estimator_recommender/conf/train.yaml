@@ -33,7 +33,7 @@
 train:
   # path related.
   model_dir: ./lr_model_dir
-  model_name: LR
+  model_name: FM
   train_data: ../dataset/taobao_data/data_train.csv
   eval_data: ../dataset/taobao_data/data_test.csv
   test_data:

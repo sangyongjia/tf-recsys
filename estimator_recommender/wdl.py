@@ -95,6 +95,10 @@ def model(wide_part, deep_part):
     dnn_dropout_rate = model_conf["dnn_dropout_rate"]
     seed = model_conf["seed"]
 
+    #features_conf = load_conf(features.yaml)
+    #embeding_dim = features_conf[""]
+    embedding_dim = 4 ##TODO 这个embedding_dim如何读进来？
+    features_num = 3
 
     if initializer == "glorot_normal":#TODO 修改 initiliazer,现在并未使用到initializer
         initializer_fn = tf.keras.initializers.glorot_normal()
@@ -114,12 +118,32 @@ def model(wide_part, deep_part):
         dnn_logit = Dense(1, use_bias=False, activation=None)(dnn_output)
         model_output = dnn_logit + tf.reduce_sum(wide_part, axis=1, keep_dims=True)
     elif model_name == "LR":
-
-        wide_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
-        print("wide_part_l2",wide_part_l2)
+        linear_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
+        #print("wide_part_l2",wide_part_l2)
         model_output = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
-        print("model_output",model_output)
-    return model_output, wide_part_l2
+        #print("model_output",model_output)
+        regularizer = linear_part_l2
+
+    elif model_name == "FM":
+
+        #linear_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
+        linear_part = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
+
+
+        print(deep_part)
+        feature_matrix = tf.reshape(deep_part,(-1,features_num,embedding_dim))
+        print("feature_matrix:",feature_matrix)
+
+        #feature_matrix = tf.keras.layers.Concatenate(axis=1)([userid_fm, categoryid_fm, itemid_fm])
+        sum_square = tf.square(tf.reduce_sum(feature_matrix, axis=1, keepdims=True))
+        print("sum_square:", sum_square)
+        square_sum = tf.reduce_sum(tf.square(feature_matrix), axis=1, keepdims=True)
+        print("square_sum:", square_sum)
+        cross_part = 0.5 * tf.reduce_sum(sum_square - square_sum, axis=2)
+
+        output = tf.sigmoid(linear_part + cross_part)
+        regularizer = None
+    return model_output, regularizer
 
 
 def model_fn(features, labels, mode, params, config):
@@ -129,6 +153,7 @@ def model_fn(features, labels, mode, params, config):
     print('wide_part_features: {}'.format(wide_part.get_shape()))
     print('deep_part_features: {}'.format(deep_part.get_shape()))
     logits, regularizer = model(wide_part, deep_part,) #TODO, add is_training or
+
     predictions = tf.nn.sigmoid(logits)
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions={"output":predictions})
