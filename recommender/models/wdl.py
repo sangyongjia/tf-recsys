@@ -1,3 +1,4 @@
+import tensorflow as tf
 from tensorflow.keras.models import Model
 from ..inputs import build_input_features
 from ..inputs import input_from_feature_columns
@@ -31,6 +32,8 @@ def WDL(line_feature_columns, dnn_feature_columns, dnn_hidden_units=(128,128), l
         final_logit = add_func([dnn_logit, linear_logit])
 
         output = PredictionLayer(task)(final_logit)
+        #output = tf.squeeze(PredictionLayer(task)(final_logit))
+        print("output***:",tf.shape(output))
 
         model = Model(inputs=inputs_list, outputs=output)
 
