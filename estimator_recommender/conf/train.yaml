@@ -32,7 +32,7 @@
 #    specified, elements will be processed sequentially.
 train:
   # path related.
-  model_dir: ./lr_model_dir
+  model_dir: ./fm_model_dir
   model_name: FM
   train_data: ../dataset/taobao_data/data_train.csv
   eval_data: ../dataset/taobao_data/data_test.csv
