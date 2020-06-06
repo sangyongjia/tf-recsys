@@ -141,7 +141,7 @@ def model(wide_part, deep_part):
         print("square_sum:", square_sum)
         cross_part = 0.5 * tf.reduce_sum(sum_square - square_sum, axis=2)
 
-        output = tf.sigmoid(linear_part + cross_part)
+        model_output = tf.sigmoid(linear_part + cross_part)
         regularizer = None
     return model_output, regularizer
 
