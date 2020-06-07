@@ -56,7 +56,7 @@ userid:
   transform: hash_bucket
   parameter:
     hash_bucket_size: 60000
-    embed_size: 4
+    embed_size: 8
 
 
 item:
@@ -64,7 +64,7 @@ item:
   transform: hash_bucket
   parameter:
     hash_bucket_size: 1500000
-    embed_size: 4
+    embed_size: 8
 
 
 category:
@@ -72,4 +72,4 @@ category:
   transform: hash_bucket
   parameter:
     hash_bucket_size: 14000
-    embed_size: 4
+    embed_size: 8

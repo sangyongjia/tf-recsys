@@ -38,7 +38,7 @@ train:
   eval_data: ../dataset/taobao_data/data_test.csv
   test_data:
   # train behavior
-  train_epochs: 20
+  train_epochs: 40
   eval_epochs: 1
   batch_size: 1000
   columns_name: ['userid','item','category','buy_flag']

@@ -8,7 +8,7 @@ from tensorflow.keras.initializers import Zeros
 
 import yaml
 config=tf.compat.v1.ConfigProto(allow_soft_placement=True)
-config.gpu_options.per_process_gpu_memory_fraction = 0.03
+config.gpu_options.per_process_gpu_memory_fraction = 0.12
 tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
 
 
@@ -45,7 +45,7 @@ def build_model_columns():
 
             wide_part.append(tf.feature_column.embedding_column(col,
                                                                 dimension=1,
-                                                                combiner="sum",
+                                                                combiner=None,
                                                                 initializer=RandomNormal(mean=0.0, stddev=0.0001, seed=2020),
                                                                 ckpt_to_load_from=None,
                                                                 tensor_name_in_ckpt=None,
@@ -53,8 +53,8 @@ def build_model_columns():
                                                                 trainable=True))
             deep_part.append(tf.feature_column.embedding_column(col,
                                                                 dimension=embed_dim,
-                                                                combiner="sum",
-                                                                initializer=None,
+                                                                combiner=None,
+                                                                initializer=RandomNormal(mean=0.0, stddev=0.0001, seed=2020),
                                                                 ckpt_to_load_from=None,
                                                                 tensor_name_in_ckpt=None,
                                                                 max_norm=None,
@@ -97,7 +97,7 @@ def model(wide_part, deep_part):
 
     #features_conf = load_conf(features.yaml)
     #embeding_dim = features_conf[""]
-    embedding_dim = 4 ##TODO 这个embedding_dim如何读进来？
+    embedding_dim = 8 ##TODO 这个embedding_dim如何读进来？
     features_num = 3
 
     if initializer == "glorot_normal":#TODO 修改 initiliazer,现在并未使用到initializer
@@ -125,12 +125,15 @@ def model(wide_part, deep_part):
         regularizer = linear_part_l2
 
     elif model_name == "FM":
-
+        tv = tf.trainable_variables()#得到所有可以训练的参数，即所有trainable=True 的tf.Variable/tf.get_variable
+        regularizer = 1e-6 * tf.reduce_sum([ tf.nn.l2_loss(v) for v in tv ]) #0.001是lambda超参数
+        print("\ntv:" ,tv)       
         #linear_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
         linear_part = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
-
+        #linear_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
 
         print(deep_part)
+        #cross_part_l2 = tf.contrib.layers.l2_regularizer(1.0)(deep_part)
         feature_matrix = tf.reshape(deep_part,(-1,features_num,embedding_dim))
         print("feature_matrix:",feature_matrix)
 
@@ -141,8 +144,9 @@ def model(wide_part, deep_part):
         print("square_sum:", square_sum)
         cross_part = 0.5 * tf.reduce_sum(sum_square - square_sum, axis=2)
 
-        model_output = tf.sigmoid(linear_part + cross_part)
-        regularizer = 0
+        #model_output = tf.sigmoid(linear_part + cross_part)
+        model_output = tf.add(linear_part,cross_part)
+        
     return model_output, regularizer
 
 
@@ -157,13 +161,18 @@ def model_fn(features, labels, mode, params, config):
     predictions = tf.nn.sigmoid(logits)
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions={"output":predictions})
-    #cross_entropy = tf.losses.sigmoid_cross_entropy()
+    #cross_entropy = tf.reduce_mean(tf.losses.sigmoid_cross_entropy(labels=tf.cast(labels,tf.float32),logits=tf.squeeze(predictions)))
     cross_entropy = tf.add(tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.cast(labels,tf.float32),logits=tf.squeeze(predictions))),regularizer)
-    accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions, name="acc")
+    tv = tf.trainable_variables()
+    print("\n\ntf.GraphKeys.VARIABLES:\n\n\n",tv)
+    print("\n\ntf.GraphKeys.TRAINABLE_VARIABLES:\n\n\n",tf.GraphKeys.TRAINABLE_VARIABLES)
+    #accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions, name="acc")
     auc = tf.metrics.auc(labels=labels, predictions=predictions, name="auc")
     if mode == tf.estimator.ModeKeys.EVAL:
-        return tf.estimator.EstimatorSpec(mode=mode,predictions={"output":predictions},loss=cross_entropy,eval_metric_ops={"acc":accuracy,"auc":auc},evaluation_hooks=None)
+        return tf.estimator.EstimatorSpec(mode=mode,predictions={"output":predictions},loss=cross_entropy,eval_metric_ops={"auc":auc},evaluation_hooks=None)
 
+    #optimizer = tf.keras.optimizers.Adam()
+    #train_op = optimizer.minimize(loss=cross_entropy)#TODO global_step= 加不加这个有什么区别？不加没有打印信息
     optimizer = tf.train.AdamOptimizer()
     train_op = optimizer.minimize(loss=cross_entropy,global_step=global_step)#TODO global_step= 加不加这个有什么区别？不加没有打印信息
     if mode == tf.estimator.ModeKeys.TRAIN:
