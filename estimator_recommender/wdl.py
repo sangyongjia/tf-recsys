@@ -1,5 +1,7 @@
 import tensorflow as tf
 from layers.core import DNN
+from layers.core import Linear
+
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.initializers import RandomNormal
 
@@ -129,7 +131,8 @@ def model(wide_part, deep_part):
         regularizer = 1e-6 * tf.reduce_sum([ tf.nn.l2_loss(v) for v in tv ]) #0.001是lambda超参数
         print("\ntv:" ,tv)       
         #linear_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
-        linear_part = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
+        #linear_part = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
+        linear_part = Linear(l2_reg=0, mode=0, use_bias=True)(wide_part)
         #linear_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
 
         print(deep_part)
@@ -163,9 +166,9 @@ def model_fn(features, labels, mode, params, config):
         return tf.estimator.EstimatorSpec(mode=mode, predictions={"output":predictions})
     #cross_entropy = tf.reduce_mean(tf.losses.sigmoid_cross_entropy(labels=tf.cast(labels,tf.float32),logits=tf.squeeze(predictions)))
     cross_entropy = tf.add(tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.cast(labels,tf.float32),logits=tf.squeeze(predictions))),regularizer)
-    tv = tf.trainable_variables()
-    print("\n\ntf.GraphKeys.VARIABLES:\n\n\n",tv)
-    print("\n\ntf.GraphKeys.TRAINABLE_VARIABLES:\n\n\n",tf.GraphKeys.TRAINABLE_VARIABLES)
+    #tv = tf.trainable_variables()
+    #print("\n\ntf.GraphKeys.VARIABLES:\n\n\n",tv)
+    #print("\n\ntf.GraphKeys.TRAINABLE_VARIABLES:\n\n\n",tf.GraphKeys.TRAINABLE_VARIABLES)
     #accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions, name="acc")
     auc = tf.metrics.auc(labels=labels, predictions=predictions, name="auc")
     if mode == tf.estimator.ModeKeys.EVAL:
