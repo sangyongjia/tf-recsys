@@ -39,7 +39,7 @@ def generate_batch(file_path=files, perform_shuffle=True, repeat_count=1,batch_s
     return features['item'], labels[0]
 '''
 
-train_data = pd.read_csv("../../dataset/taobao_data/item2item.txt",names=['item','label'],index_col=False,dtype={'item': 'Int64', 'label': 'Int64'})
+train_data = pd.read_csv("../../dataset/taobao_data/item2item_im.txt",names=['item','label'],index_col=False,dtype={'item': 'Int64', 'label': 'Int64'})
 def generate_batch(batch_size=10):
     data_index=0
     #print(data_index)
@@ -57,7 +57,8 @@ valid_size = 16
 valid_window = 100
 valid_example = np.array(random.sample(range(valid_window), valid_size))
 num_sampled = 64
-item_size = 5163068
+#item_size = 5163068
+item_size = 1500
 
 graph = tf.Graph()
 with graph.as_default():
@@ -89,7 +90,7 @@ with graph.as_default():
     similarity = tf.matmul(valid_embeddings, tf.transpose(normalized_embeddings))
 
     ##train
-    num_steps = 100000
+    num_steps = 0
     with tf.Session(graph=graph) as session:
         tf.global_variables_initializer().run()
         average_loss = 0 
@@ -108,5 +109,10 @@ with graph.as_default():
                 sim = similarity.eval()
                 for i in range(valid_size):
                     pass
+        print("normalized_embeddings:",normalized_embeddings)
+        print("normalized_embeddings type:", type(normalized_embeddings))
         final_embeddings = normalized_embeddings.eval()
-
+        print("final_embeddings:",final_embeddings)
+        print("final_embeddings:",type(final_embeddings))
+        #np.savetxt("embeddings1.txt", final_embeddings)
+        pd.DataFrame(final_embeddings).to_csv("../../dataset/taobao_data/embeddings1.txt",index=True,sep=' ',header=False)

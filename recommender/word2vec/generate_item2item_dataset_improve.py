@@ -3,7 +3,10 @@ from pandas import DataFrame
 import numpy as np
 from itertools import combinations
 import json
-data = pd.read_csv("../../dataset/taobao_data/data_train.csv", dtype=str )
+
+column_names = ["userid", "item", "category","buy_flag"]
+
+data = pd.read_csv("../../dataset/taobao_data/data_train.csv",names=column_names, dtype=str )
 
 userid = '1'
 items = []
@@ -51,9 +54,9 @@ for i in range(len(data)):
         items.append(data.iloc[i]['item'])
     if i % 100000==0:
         print("i:",i)
-    #k += 1
-    #if k==1500:
-    #    break
+    k += 1
+    if k==15:
+        break
 f.close()
 json.dump(word2id, f1)       
 f1.close()
