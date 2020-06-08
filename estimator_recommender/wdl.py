@@ -208,7 +208,22 @@ def run():
     columns_name = train_conf["columns_name"]
     label_name = train_conf["label_name"]
 
+    def fc_column(feature_name, hash_bucket_size, embedding_dim=4, dtype=tf.int64):
+        f1 = tf.feature_column.categorical_column_with_hash_bucket(feature_name, hash_bucket_size, dtype)
+        fc = tf.feature_column.embedding_column(f1, dimension=embedding_dim, )
+        return fc
+    # saved model part
+    print("\nsaved model:\n",)
+    feature_columns = [fc_column("userid", 60000, 1), fc_column("category", 14000, 1), fc_column("item", 1500000, 1)]
+    print("\nfeature_columns:\n",feature_columns)
+    feature_spec = tf.feature_column.make_parse_example_spec(feature_columns)
+    print("\nfeature_spec:\n",feature_spec)
+    serving_input_receiver_fn = tf.estimator.export.build_parsing_serving_input_receiver_fn(feature_spec=feature_spec)
+    print("\nserving_input_receiver_fn:\n", serving_input_receiver_fn)
+    best_exporter = tf.estimator.BestExporter(serving_input_receiver_fn=serving_input_receiver_fn, exports_to_keep=2)
+    exporters = [best_exporter]
 
+    #estimator
     estimator = build_estimator(model_dir=model_dir)
     tf.estimator.train_and_evaluate(estimator,
                                     train_spec=tf.estimator.TrainSpec(input_fn=lambda: input_fn(file_path = train_data,
@@ -223,6 +238,7 @@ def run():
                                                                                               columns_name = columns_name,
                                                                                               label_name = label_name),
                                                                     steps=None,
+                                                                    exporters=exporters,
                                                                     throttle_secs=6))
 
 #estimator = tf.estimator.Estimator(model_fn=mode_fn,
