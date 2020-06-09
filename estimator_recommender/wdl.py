@@ -232,6 +232,28 @@ def run():
     columns_name = train_conf["columns_name"]
     label_name = train_conf["label_name"]
 
+    #    boundaries:
+    # ['userid','item','category','buy_flag']
+
+
+
+    def serving_input_receiver_fn():
+        receiver_tensors = {
+            'userid': tf.placeholder(tf.int64, [None, 1]),
+            'item': tf.placeholder(tf.int64, [None, 1]),
+            'category': tf.placeholder(tf.int64, [None, 1])
+        }
+
+        # Convert give inputs to adjust to the model.
+        # features = {"examplessss": tf.concat([receiver_tensors['device_ip'], receiver_tensors['C1']], axis=1)}
+        return tf.estimator.export.ServingInputReceiver(receiver_tensors=receiver_tensors, features=receiver_tensors)
+
+    best_exporter = tf.estimator.BestExporter(serving_input_receiver_fn=serving_input_receiver_fn, exports_to_keep=1)
+    exporters = [best_exporter]
+
+
+
+    '''
     def fc_column(feature_name, hash_bucket_size, embedding_dim=4, dtype=tf.int64):
         f1 = tf.feature_column.categorical_column_with_hash_bucket(feature_name, hash_bucket_size, dtype)
         fc = tf.feature_column.embedding_column(f1, dimension=embedding_dim, )
@@ -246,7 +268,7 @@ def run():
     print("\nserving_input_receiver_fn:\n", serving_input_receiver_fn)
     best_exporter = tf.estimator.BestExporter(serving_input_receiver_fn=serving_input_receiver_fn, exports_to_keep=2)
     exporters = [best_exporter]
-
+    '''
     #estimator
     estimator = build_estimator(model_dir=model_dir)
     tf.estimator.train_and_evaluate(estimator,
