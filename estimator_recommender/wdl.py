@@ -115,10 +115,15 @@ def model(wide_part, deep_part):
         raise TypeError("activation_fn {} is not implement".format(activation))
 
     if model_name == "WDL":
+        tv = tf.trainable_variables()  # 得到所有可以训练的参数，即所有trainable=True 的tf.Variable/tf.get_variable
+        regularizer = 1e-5 * tf.reduce_sum([tf.nn.l2_loss(v) for v in tv])
+        #print("\ntv:", tv)
+
         dnn_hidden_units =model_conf["dnn_hidden_units"]
         dnn_output = DNN(dnn_hidden_units, activation_fn, l2_reg_dnn, dnn_dropout_rate, False, seed)(deep_part)
         dnn_logit = Dense(1, use_bias=False, activation=None)(dnn_output)
         model_output = dnn_logit + tf.reduce_sum(wide_part, axis=1, keep_dims=True)
+
     elif model_name == "LR":
         linear_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
         #print("wide_part_l2",wide_part_l2)
@@ -128,7 +133,7 @@ def model(wide_part, deep_part):
 
     elif model_name == "FM":
         tv = tf.trainable_variables()#得到所有可以训练的参数，即所有trainable=True 的tf.Variable/tf.get_variable
-        regularizer = 1e-5 * tf.reduce_sum([ tf.nn.l2_loss(v) for v in tv ]) #0.001是lambda超参数
+        regularizer = 1e-5 * tf.reduce_sum([ tf.nn.l2_loss(v) for v in tv ])
         print("\ntv:" ,tv)       
         #linear_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
         #linear_part = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
@@ -149,6 +154,7 @@ def model(wide_part, deep_part):
 
         #model_output = tf.sigmoid(linear_part + cross_part)
         model_output = tf.add(linear_part,cross_part)
+
         
     return model_output, regularizer
 
