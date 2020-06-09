@@ -137,7 +137,7 @@ def model(wide_part, deep_part):
         print("\ntv:" ,tv)       
         #linear_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
         #linear_part = tf.reduce_sum(wide_part, axis=1, keep_dims=True)
-        linear_part = Linear(l2_reg=0, mode=0, use_bias=False)(wide_part)
+        linear_part = Linear(l2_reg=0, mode=0, use_bias=True)(wide_part)
         #linear_part_l2 = tf.contrib.layers.l2_regularizer(1e-5)(wide_part)
 
         print(deep_part)
@@ -154,6 +154,24 @@ def model(wide_part, deep_part):
 
         #model_output = tf.sigmoid(linear_part + cross_part)
         model_output = tf.add(linear_part,cross_part)
+    elif model_name =="DeepFM":
+        #regularizer
+        tv = tf.trainable_variables()#得到所有可以训练的参数，即所有trainable=True 的tf.Variable/tf.get_variable
+        regularizer = 1e-5 * tf.reduce_sum([ tf.nn.l2_loss(v) for v in tv ])
+        print("\ntv:" ,tv)
+        #linear part
+        linear_part = Linear(l2_reg=0, mode=0, use_bias=True)(wide_part)
+        #fm part
+        feature_matrix = tf.reshape(deep_part, (-1, features_num, embedding_dim))
+        sum_square = tf.square(tf.reduce_sum(feature_matrix, axis=1, keepdims=True))
+        square_sum = tf.reduce_sum(tf.square(feature_matrix), axis=1, keepdims=True)
+        cross_part = 0.5 * tf.reduce_sum(sum_square - square_sum, axis=2)
+        #deep part
+        dnn_hidden_units = model_conf["dnn_hidden_units"]
+        dnn_output = DNN(dnn_hidden_units, activation_fn, l2_reg_dnn, dnn_dropout_rate, False, seed)(deep_part)
+        dnn_logit = Dense(1, use_bias=False, activation=None)(dnn_output)
+
+        model_output = linear_part + cross_part + dnn_logit
 
         
     return model_output, regularizer
